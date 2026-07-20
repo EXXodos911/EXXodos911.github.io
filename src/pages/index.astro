@@ -5,6 +5,7 @@ import { formatPostDate, posts } from '../data/posts';
 const orderedPosts = [...posts].sort((a, b) =>
   b.publishedAt.localeCompare(a.publishedAt)
 );
+const base = import.meta.env.BASE_URL;
 ---
 
 <SiteLayout>
@@ -17,7 +18,7 @@ const orderedPosts = [...posts].sort((a, b) =>
   <section class="post-list" aria-label="Blog posts">
     {orderedPosts.map((post, index) => (
       <article class="post-row">
-        <a href={`/blog/${post.slug}/`} aria-label={`Read ${post.title}`}>
+        <a href={`${base}blog/${post.slug}/`} aria-label={`Read ${post.title}`}>
           <div class="post-row__number" aria-hidden="true">
             {String(index + 1).padStart(2, '0')}
           </div>

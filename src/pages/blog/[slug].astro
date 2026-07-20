@@ -14,11 +14,12 @@ type Props = {
 };
 
 const { post } = Astro.props;
+const base = import.meta.env.BASE_URL;
 ---
 
 <SiteLayout title={`${post.title} — Alex Morgan`} description={post.description}>
   <article class="article">
-    <a class="back-link" href="/">← All notes</a>
+    <a class="back-link" href={base}>← All notes</a>
 
     <header class="article__header">
       <p class="eyebrow">Essay</p>
@@ -35,7 +36,7 @@ const { post } = Astro.props;
     </div>
 
     <footer class="article__footer">
-      <a href="/">Read another note</a>
+      <a href={base}>Read another note</a>
     </footer>
   </article>
 </SiteLayout>
