@@ -1,0 +1,34 @@
+---
+import Sidebar from '../components/Sidebar.astro';
+import '../styles/global.css';
+
+type Props = {
+  title?: string;
+  description?: string;
+};
+
+const {
+  title = 'Alex Morgan — Notes',
+  description = 'Writing about thoughtful software, simple systems, and creative work.'
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#050505" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title}</title>
+  </head>
+  <body>
+    <div class="shell">
+      <Sidebar />
+      <main class="content">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>

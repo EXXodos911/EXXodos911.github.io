@@ -1,0 +1,41 @@
+---
+import SiteLayout from '../../layouts/SiteLayout.astro';
+import { formatPostDate, posts, type Post } from '../../data/posts';
+
+export function getStaticPaths() {
+  return posts.map((post) => ({
+    params: { slug: post.slug },
+    props: { post }
+  }));
+}
+
+type Props = {
+  post: Post;
+};
+
+const { post } = Astro.props;
+---
+
+<SiteLayout title={`${post.title} — Alex Morgan`} description={post.description}>
+  <article class="article">
+    <a class="back-link" href="/">← All notes</a>
+
+    <header class="article__header">
+      <p class="eyebrow">Essay</p>
+      <h1>{post.title}</h1>
+      <p class="article__description">{post.description}</p>
+      <div class="article__meta">
+        <time datetime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
+        <span>{post.readingTime}</span>
+      </div>
+    </header>
+
+    <div class="article__body">
+      {post.content.map((paragraph) => <p>{paragraph}</p>)}
+    </div>
+
+    <footer class="article__footer">
+      <a href="/">Read another note</a>
+    </footer>
+  </article>
+</SiteLayout>
