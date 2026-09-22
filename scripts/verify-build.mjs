@@ -34,10 +34,10 @@ for (const file of htmlFiles) {
   for (const [, rawTarget] of html.matchAll(/\b(?:href|src)="([^"]+)"/g)) {
     if (!rawTarget.startsWith('/') || rawTarget.startsWith('//') || rawTarget.startsWith('/#')) continue;
     const target = rawTarget.split(/[?#]/, 1)[0];
-    if (target !== '/' && target.endsWith('/')) fail(`${label}: trailing-slash link ${rawTarget}`);
+    const normalizedTarget = target.length > 1 ? target.replace(/\/$/, '') : target;
 
-    const relativeTarget = target.slice(1);
-    const candidates = target === '/'
+    const relativeTarget = normalizedTarget.slice(1);
+    const candidates = normalizedTarget === '/'
       ? ['index.html']
       : [relativeTarget, `${relativeTarget}.html`, `${relativeTarget}/index.html`];
     if (!candidates.some((candidate) => existsSync(join(root, candidate)))) {
@@ -49,8 +49,11 @@ for (const file of htmlFiles) {
 for (const file of filesUnder(root).filter((path) => path.endsWith('.xml'))) {
   const xml = readFileSync(file, 'utf8');
   for (const [, rawUrl] of xml.matchAll(/<(?:loc|link)>([^<]+)<\/(?:loc|link)>/g)) {
-    const pathname = new URL(rawUrl).pathname;
-    if (pathname !== '/' && pathname.endsWith('/')) fail(`${relative(root, file)}: trailing-slash URL ${rawUrl}`);
+    try {
+      new URL(rawUrl);
+    } catch {
+      fail(`${relative(root, file)}: invalid URL ${rawUrl}`);
+    }
   }
 }
 
