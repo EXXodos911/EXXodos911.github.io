@@ -1,4 +1,6 @@
 ---
+import { SITE } from '../site';
+
 const currentYear = new Date().getFullYear();
 const base = import.meta.env.BASE_URL;
 ---
@@ -7,19 +9,22 @@ const base = import.meta.env.BASE_URL;
   <div>
     <a class="identity" href={base} aria-label="Go to homepage">
       <span class="identity__mark" aria-hidden="true"></span>
-      <span>Alex Morgan</span>
+      <span>{SITE.name}</span>
     </a>
 
     <p class="about">
-      Designer and developer writing about thoughtful software, simple systems, and the quieter parts of creative work.
+      {SITE.bio}
     </p>
 
-    <nav aria-label="Social links">
-      <a href="mailto:hello@example.com">Email</a>
-      <a href="https://github.com/" target="_blank" rel="noreferrer">GitHub</a>
-      <a href="https://www.linkedin.com/" target="_blank" rel="noreferrer">LinkedIn</a>
+    <nav aria-label="Site links">
+      <a href={base}>Notes</a>
+      <a href={`${base}tags`}>Tags</a>
+      {SITE.socials.map((link) => (
+        <a href={link.href} target="_blank" rel="noreferrer">{link.label}</a>
+      ))}
+      <a href={`${base}rss.xml`}>RSS</a>
     </nav>
   </div>
 
-  <p class="copyright">© {currentYear} Alex Morgan</p>
+  <p class="copyright">© {currentYear} {SITE.name}</p>
 </aside>

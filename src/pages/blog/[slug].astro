@@ -1,42 +1,109 @@
 ---
+import { getCollection, render } from 'astro:content';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { formatPostDate, posts, type Post } from '../../data/posts';
+import { SITE } from '../../site';
+import { estimateReadingTime, formatPostDate, slugifyTag, toISODate } from '../../utils/posts';
+import { extractToc } from '../../utils/toc';
 
-export function getStaticPaths() {
+export async function getStaticPaths() {
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
   return posts.map((post) => ({
-    params: { slug: post.slug },
-    props: { post }
+    params: { slug: post.id.replace(/\.md$/, '') },
+    props: { post },
   }));
 }
 
-type Props = {
-  post: Post;
-};
-
 const { post } = Astro.props;
+const { Content } = await render(post);
 const base = import.meta.env.BASE_URL;
+const slug = post.id.replace(/\.md$/, '');
+const canonicalPath = `/blog/${slug}`;
+const readingTime = estimateReadingTime(post.body ?? '');
+const publishedISO = post.data.pubDate.toISOString();
+const updatedISO = post.data.updatedDate?.toISOString();
+const toc = extractToc(post.body ?? '');
+const showToc = toc.length >= 2;
 ---
 
-<SiteLayout title={`${post.title} — Alex Morgan`} description={post.description}>
-  <article class="article">
+<SiteLayout
+  title={`${post.data.title} — ${SITE.name}`}
+  description={post.data.description}
+  canonicalPath={canonicalPath}
+  type="article"
+  publishedTime={publishedISO}
+  updatedTime={updatedISO}
+>
+  <article class={showToc ? 'article article--with-toc' : 'article'}>
     <a class="back-link" href={base}>← All notes</a>
 
     <header class="article__header">
-      <p class="eyebrow">Essay</p>
-      <h1>{post.title}</h1>
-      <p class="article__description">{post.description}</p>
+      <h1>{post.data.title}</h1>
+      <p class="article__description">{post.data.description}</p>
       <div class="article__meta">
-        <time datetime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
-        <span>{post.readingTime}</span>
+        <time datetime={toISODate(post.data.pubDate)}>{formatPostDate(post.data.pubDate)}</time>
+        <span>{readingTime}</span>
       </div>
+      {post.data.tags.length > 0 && (
+        <div class="tag-list tag-list--article" aria-label="Tags">
+          {post.data.tags.map((tag) => (
+            <a class="tag tag--link" href={`${base}tags/${slugifyTag(tag)}`}>#{tag}</a>
+          ))}
+        </div>
+      )}
     </header>
 
-    <div class="article__body">
-      {post.content.map((paragraph) => <p>{paragraph}</p>)}
-    </div>
+    <div class="article__columns">
+      <div class="article__main">
+        <div class="article__body">
+          <Content />
+        </div>
 
-    <footer class="article__footer">
-      <a href={base}>Read another note</a>
-    </footer>
+        <footer class="article__footer">
+          <a href={base}>Read another note</a>
+        </footer>
+      </div>
+
+      {showToc && (
+        <aside class="toc-side">
+          <nav class="toc" aria-label="Table of contents">
+            <p class="toc__title"><span aria-hidden="true">⌗ </span>On this page</p>
+            <ul>
+              {toc.map((entry) => (
+                <li class={entry.depth === 3 ? 'toc__item toc__item--sub' : 'toc__item'}>
+                  <a href={`#${entry.slug}`}>{entry.text}</a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+      )}
+    </div>
   </article>
+
+  {showToc && (
+    <script>
+      const nav = document.querySelector('.toc');
+      if (nav) {
+        const links = [...nav.querySelectorAll('a')];
+        const byId = new Map(
+          links.map((a) => [a.getAttribute('href')?.slice(1), a])
+        );
+        const observer = new IntersectionObserver(
+          (entries) => {
+            for (const entry of entries) {
+              if (entry.isIntersecting) {
+                links.forEach((l) => l.classList.remove('is-active'));
+                byId.get(entry.target.id)?.classList.add('is-active');
+              }
+            }
+          },
+          { rootMargin: '-20% 0px -70% 0px' }
+        );
+        for (const id of byId.keys()) {
+          const el = id && document.getElementById(id);
+          if (el) observer.observe(el);
+        }
+      }
+    </script>
+  )}
 </SiteLayout>

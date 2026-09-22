@@ -1,0 +1,19 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+
+const base = import.meta.env.BASE_URL;
+---
+
+<SiteLayout
+  title="Not found"
+  description="The page you are looking for does not exist."
+  canonicalPath={null}
+  noindex
+>
+  <header class="page-header">
+    <p class="eyebrow">404</p>
+    <h1>Lost?</h1>
+    <p>This page does not exist. It may have moved or never existed.</p>
+  </header>
+  <p><a class="back-link" href={base}>← Back to notes</a></p>
+</SiteLayout>

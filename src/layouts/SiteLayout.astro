@@ -1,33 +1,96 @@
 ---
 import Sidebar from '../components/Sidebar.astro';
+import { SITE } from '../site';
 import '../styles/global.css';
 
 type Props = {
   title?: string;
   description?: string;
+  canonicalPath?: string | null;
+  type?: 'website' | 'article';
+  publishedTime?: string;
+  updatedTime?: string;
+  noindex?: boolean;
 };
 
 const {
-  title = 'Alex Morgan — Notes',
-  description = 'Writing about thoughtful software, simple systems, and creative work.'
+  title = SITE.title,
+  description = SITE.description,
+  canonicalPath = '/',
+  type = 'website',
+  publishedTime,
+  updatedTime,
+  noindex = false,
 } = Astro.props;
 const base = import.meta.env.BASE_URL;
+const siteUrl = SITE.siteUrl.replace(/\/$/, '');
+const canonicalUrl = canonicalPath
+  ? `${siteUrl}${canonicalPath === '/' ? '/' : canonicalPath.replace(/\/$/, '')}`
+  : undefined;
+const assetUrl = (path: string) => `${siteUrl}${base}${path.replace(/^\/+/, '')}`;
+const socialImageUrl = assetUrl(SITE.socialImage);
+const schema = type === 'article'
+  ? {
+      '@context': 'https://schema.org',
+      '@type': 'BlogPosting',
+      headline: title,
+      description,
+      url: canonicalUrl,
+      image: socialImageUrl,
+      datePublished: publishedTime,
+      ...(updatedTime ? { dateModified: updatedTime } : {}),
+      mainEntityOfPage: canonicalUrl,
+      inLanguage: 'en',
+      author: { '@type': 'Person', name: SITE.name, url: siteUrl },
+    }
+  : {
+      '@context': 'https://schema.org',
+      '@type': 'Blog',
+      name: title,
+      description,
+      url: canonicalUrl,
+      image: socialImageUrl,
+      inLanguage: 'en',
+      author: { '@type': 'Person', name: SITE.name, url: siteUrl },
+    };
 ---
 
 <!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
-    <meta name="theme-color" content="#050505" />
+    <meta name="theme-color" content="#141415" />
     <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
+    {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS`} href={`${base}rss.xml`} />
+    <link rel="sitemap" type="application/xml" href={`${base}sitemap-index.xml`} />
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    <meta property="og:type" content={type} />
+    <meta property="og:site_name" content={SITE.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
+    <meta property="og:image" content={socialImageUrl} />
+    {type === 'article' && publishedTime && (
+      <meta property="article:published_time" content={publishedTime} />
+    )}
+    {type === 'article' && updatedTime && (
+      <meta property="article:modified_time" content={updatedTime} />
+    )}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={socialImageUrl} />
     <title>{title}</title>
+    {!noindex && <script type="application/ld+json" set:html={JSON.stringify(schema)} />}
   </head>
   <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <div class="shell">
       <Sidebar />
-      <main class="content">
+      <main class="content" id="main-content">
         <slot />
       </main>
     </div>
