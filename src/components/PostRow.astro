@@ -1,0 +1,46 @@
+---
+import {
+  estimateReadingTime,
+  formatPostDate,
+  postPath,
+  slugifyTag,
+  tagPath,
+  toISODate,
+  withBase,
+  type Post,
+} from '../utils/posts';
+
+type Props = {
+  post: Post;
+  index: number;
+};
+
+const { post, index } = Astro.props;
+const { title, description, pubDate, tags } = post.data;
+---
+
+<article class="post-row">
+  <div class="post-row__number" aria-hidden="true">
+    {String(index + 1).padStart(2, '0')}
+  </div>
+
+  <div class="post-row__body">
+    <!-- The title link stretches over the whole row; tag links sit above it. -->
+    {post.data.draft && <p class="badge-draft">Draft</p>}
+    <h2><a class="post-row__link" href={withBase(postPath(post))}>{title}</a></h2>
+    <p>{description}</p>
+    <div class="post-row__meta">
+      <time datetime={toISODate(pubDate)}>{formatPostDate(pubDate)}</time>
+      <span>{estimateReadingTime(post.body ?? '')}</span>
+      {tags.length > 0 && (
+        <ul class="tag-list" aria-label="Tags">
+          {tags.map((tag) => (
+            <li><a class="tag tag--link" href={withBase(tagPath(slugifyTag(tag)))}>{tag}</a></li>
+          ))}
+        </ul>
+      )}
+    </div>
+  </div>
+
+  <span class="post-row__arrow" aria-hidden="true">↗</span>
+</article>
