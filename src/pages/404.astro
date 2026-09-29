@@ -1,7 +1,6 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-
-const base = import.meta.env.BASE_URL;
+import { withBase } from '../utils/posts';
 ---
 
 <SiteLayout
@@ -15,5 +14,5 @@ const base = import.meta.env.BASE_URL;
     <h1>Lost?</h1>
     <p>This page does not exist. It may have moved or never existed.</p>
   </header>
-  <p><a class="back-link" href={base}>← Back to notes</a></p>
+  <p><a class="back-link" href={withBase('/')}>← Back to notes</a></p>
 </SiteLayout>
