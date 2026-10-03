@@ -1,7 +1,7 @@
 ---
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { SITE } from '../../site';
-import { getVisiblePosts, groupByTag, tagPath, withBase } from '../../utils/posts';
+import { getVisiblePosts, groupByTag, tagPath } from '../../utils/posts';
 
 const groups = groupByTag(await getVisiblePosts());
 ---
@@ -16,7 +16,7 @@ const groups = groupByTag(await getVisiblePosts());
   <ul class="tag-index" aria-label="All tags">
     {groups.map((group) => (
       <li>
-        <a href={withBase(tagPath(group.slug))}>
+        <a href={tagPath(group.slug)}>
           #{group.label}
           <span class="tag-count">
             {group.posts.length}<span class="visually-hidden"> {group.posts.length === 1 ? 'note' : 'notes'}</span>
@@ -26,5 +26,5 @@ const groups = groupByTag(await getVisiblePosts());
     ))}
   </ul>
 
-  <p class="tags-index-link"><a href={withBase('/')}>← All notes</a></p>
+  <p class="tags-index-link"><a href="/">← All notes</a></p>
 </SiteLayout>

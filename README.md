@@ -1,6 +1,6 @@
-# Minimal Black Astro Blog
+# EXXodos911 — Notes
 
-A minimal static blog built with Astro. Just commit Markdown, GitHub Actions builds static HTML, Pages serves it. No runtime Markdown conversion or client-side framework; article TOCs use a small progressive-enhancement script.
+Source for [exxodos911.github.io](https://exxodos911.github.io), a minimal static blog built with Astro. Just commit Markdown, GitHub Actions builds static HTML, Pages serves it. No runtime Markdown conversion or client-side framework; article TOCs use a small progressive-enhancement script.
 
 It includes:
 
@@ -10,7 +10,8 @@ It includes:
 - Tag pages, plus a table of contents on posts with two or more headings: a sticky rail that tracks your position on wide screens, and a collapsible box on narrow ones
 - Code blocks with a language label and copy button
 - Self-hosted Inter and JetBrains Mono (no third-party font requests)
-- SEO: canonical, Open Graph, Twitter cards, JSON-LD, sitemap, RSS, `robots.txt`, `404`
+- SEO: canonical, Open Graph, Twitter cards, JSON-LD, sitemap, full-content RSS, `robots.txt`, `404`
+- Every page loads directly at both `/path` and `/path/`, with no redirect
 - Accessible skip link, focus states, and reduced-motion support
 
 ## Write a post
@@ -37,7 +38,7 @@ git commit -m "Add my post"
 git push origin main
 ```
 
-Actions validates and builds the site (`npm run validate`), then deploys to GitHub Pages. If validation fails, nothing is deployed. Your post is live at `/blog/my-post`.
+Actions validates and builds the site (`npm run validate`), then deploys to GitHub Pages. If validation fails, nothing is deployed. Your post is live at `/blog/my-post` (`/blog/my-post/` works too).
 
 - `draft: true` hides a post from the production build (lists, RSS, sitemap). Drafts still show in `npm run dev` with a **Draft** badge, so you can preview them locally.
 - Filename becomes the URL slug. Use lowercase with dashes.
@@ -68,22 +69,24 @@ and do not use Astro's optimization pipeline.
 
 ## Run locally
 
-This project uses Astro 7 and requires Node.js 22.12 or newer.
+This project uses Astro 7 and Node.js 22.12+, 24, or 26 (the `engines` field in
+`package.json`; CI uses the newest release it allows).
 
 ```bash
 npm install
 npm run dev
 ```
 
+Then open the local URL shown in your terminal.
+
 Run the same checks used by CI with `npm run validate`. It type-checks, builds, and then runs `scripts/verify-build.mjs` against `dist/`, which fails on:
 
 - pages missing a title, description, or exactly one `<h1>`
-- broken internal links
+- internal links that are broken or would only resolve through a redirect
+- pages that don't load directly at both `/path` and `/path/`
 - canonical, RSS, or sitemap URLs that don't match a built page
 - a missing or non-PNG/JPEG social image
 - any `draft: true` post appearing in the output
-
-Then open the local URL shown in your terminal.
 
 ## Build
 
@@ -92,13 +95,20 @@ npm run build
 npm run preview
 ```
 
+## URLs
+
+Pages are built as `path.html`, and a small integration (`src/utils/slash-aliases.mjs`)
+copies each one to `path/index.html`. GitHub Pages then serves `/path` and `/path/`
+directly, without redirecting either form. Canonical URLs, RSS, and the sitemap use the
+form without a trailing slash, so search engines see one URL per page.
+
 ## Customize
 
 - Edit name, bio, and links in `src/site.ts`.
 - Set the public site URL in `astro.config.mjs` (`site`). Canonical URLs, RSS, the sitemap, and `robots.txt` are all derived from it.
-- The social preview image is `public/og-card.png` (1200×630). Its source is `assets/og-card.svg`. After editing it, regenerate the PNG:
+- The social preview image is `public/og-card.png` (1200×630). Its source is `assets/og-card.svg`. After editing it, regenerate the PNG with the site's Inter font (needs `rsvg-convert` and `woff2_decompress`):
 
   ```bash
-  rsvg-convert -w 1200 -h 630 assets/og-card.svg -o public/og-card.png
+  npm run og-card
   ```
 - Adjust the theme in `src/styles/global.css`.

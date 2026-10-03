@@ -1,5 +1,5 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
-import GithubSlugger from 'github-slugger';
+import { slug as githubSlug } from 'github-slugger';
 import { SITE } from '../site';
 
 export type Post = CollectionEntry<'blog'>;
@@ -9,8 +9,6 @@ export type TagGroup = {
   label: string;
   posts: Post[];
 };
-
-const base = import.meta.env.BASE_URL;
 
 /**
  * Posts to show, newest first. Drafts are included under `astro dev` so they
@@ -27,11 +25,6 @@ export function postPath(post: Post) {
 
 export function tagPath(slug: string) {
   return `/tags/${slug}`;
-}
-
-/** Prefix a site path with the configured base for use in href attributes. */
-export function withBase(path: string) {
-  return `${base}${path.replace(/^\/+/, '')}`;
 }
 
 // Frontmatter dates are parsed as UTC midnight, so format them in UTC too;
@@ -56,7 +49,7 @@ export function estimateReadingTime(text: string) {
 }
 
 export function slugifyTag(tag: string) {
-  return new GithubSlugger().slug(tag.trim());
+  return githubSlug(tag.trim());
 }
 
 /**

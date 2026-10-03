@@ -1,6 +1,7 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { basename, join, relative, sep } from 'node:path';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { slug as githubSlug } from 'github-slugger';
 
 const root = fileURLToPath(new URL('../dist/', import.meta.url));
 const contentDir = fileURLToPath(new URL('../src/content/blog/', import.meta.url));
@@ -12,10 +13,9 @@ function fail(message) {
 
 function filesUnder(directory) {
   if (!existsSync(directory)) return [];
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
-    const path = join(directory, entry.name);
-    return entry.isDirectory() ? filesUnder(path) : [path];
-  });
+  return readdirSync(directory, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => join(entry.parentPath, entry.name));
 }
 
 /** Strip slashes at both ends so "/tags" and "/tags/" compare equal. */
@@ -23,20 +23,20 @@ function trimSlashes(pathname) {
   return pathname.replace(/^\/+|\/+$/g, '');
 }
 
-/** Map a site path to the dist file that serves it, or null if none does. */
+/**
+ * Map a site path to the dist file GitHub Pages serves for it directly, or null.
+ * Pages serves /a from a file named `a` or `a.html`, and /a/ from a/index.html.
+ * A bare a/ directory is not enough for /a: Pages would answer with a redirect.
+ */
 function resolveSitePath(pathname) {
-  const clean = trimSlashes(decodeURIComponent(pathname));
-  const candidates = clean === '' ? ['index.html'] : [clean, `${clean}.html`, `${clean}/index.html`];
-  return candidates.find((candidate) => existsSync(join(root, candidate))) ?? null;
-}
-
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  const clean = decodeURIComponent(pathname).replace(/^\/+/, '');
+  const candidates = clean === '' || clean.endsWith('/') ? [`${clean}index.html`] : [clean, `${clean}.html`];
+  return (
+    candidates.find((candidate) => {
+      const path = join(root, candidate);
+      return existsSync(path) && statSync(path).isFile();
+    }) ?? null
+  );
 }
 
 const required = [
@@ -54,11 +54,12 @@ for (const file of required) {
 
 const allFiles = filesUnder(root);
 const htmlFiles = allFiles.filter((file) => file.endsWith('.html'));
+const routes = new Set();
 let site;
 
 for (const file of htmlFiles) {
   const html = readFileSync(file, 'utf8');
-  const label = relative(root, file);
+  const label = relative(root, file).split(sep).join('/');
   const isNotFound = label === '404.html';
 
   if (!/<title>[^<]+<\/title>/.test(html)) fail(`${label}: missing title`);
@@ -73,17 +74,21 @@ for (const file of htmlFiles) {
     }
   }
 
-  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
   if (isNotFound) continue;
+
+  // tags.html and tags/index.html are the same route, /tags.
+  const route = trimSlashes(label.replace(/(^|\/)index\.html$/, '').replace(/\.html$/, ''));
+  routes.add(route);
+
+  const canonical = html.match(/<link rel="canonical" href="([^"]+)"/)?.[1];
   if (!canonical) {
     fail(`${label}: missing canonical URL`);
     continue;
   }
   const canonicalUrl = new URL(canonical);
   site ??= canonicalUrl.origin;
-  const expectedPath = `/${label.split(sep).join('/').replace(/index\.html$/, '')}`;
-  if (trimSlashes(canonicalUrl.pathname) !== trimSlashes(expectedPath)) {
-    fail(`${label}: canonical ${canonical} should point at ${expectedPath}`);
+  if (trimSlashes(canonicalUrl.pathname) !== route) {
+    fail(`${label}: canonical ${canonical} should point at /${route}`);
   }
 
   const ogImage = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
@@ -93,6 +98,14 @@ for (const file of htmlFiles) {
     fail(`${label}: og:image ${ogImage} must be PNG or JPEG for social previews`);
   } else if (!resolveSitePath(new URL(ogImage).pathname)) {
     fail(`${label}: og:image ${ogImage} does not exist in dist/`);
+  }
+}
+
+// Every page loads directly at both /path and /path/, with no redirect.
+for (const route of routes) {
+  if (route === '') continue;
+  for (const form of [`/${route}`, `/${route}/`]) {
+    if (!resolveSitePath(form)) fail(`${form} does not load directly; expected both ${route}.html and ${route}/index.html`);
   }
 }
 
@@ -114,21 +127,27 @@ for (const file of allFiles.filter((path) => path.endsWith('.xml'))) {
   }
 }
 
-// Every post marked `draft: true` must be absent from the build.
-const builtText = allFiles
-  .filter((file) => /\.(html|xml)$/.test(file))
-  .map((file) => readFileSync(file, 'utf8'))
-  .join('\n');
+// Every post marked `draft: true` must not be built. Lists, RSS, and the
+// sitemap only link to built pages, so the link checks above cover them too.
+// Post URLs follow Astro's glob loader: a `slug` field, or the slugified path.
 const drafts = filesUnder(contentDir)
   .filter((file) => file.endsWith('.md'))
-  .map((file) => ({ file, frontmatter: readFileSync(file, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '' }))
-  .filter(({ frontmatter }) => /^draft:\s*true\s*$/m.test(frontmatter));
-for (const { file, frontmatter } of drafts) {
-  const slug = basename(file, '.md');
-  const title = frontmatter.match(/^title:\s*(['"]?)(.*)\1\s*$/m)?.[2];
-  if (existsSync(join(root, 'blog', slug))) fail(`draft ${slug} was built to dist/blog/${slug}/`);
-  if (title && (builtText.includes(title) || builtText.includes(escapeHtml(title)))) {
-    fail(`draft title "${title}" leaked into dist/`);
+  .map((file) => {
+    const frontmatter = readFileSync(file, 'utf8').match(/^---\r?\n([\s\S]*?)\r?\n---/)?.[1] ?? '';
+    const slug =
+      frontmatter.match(/^slug:\s*(['"]?)(.+?)\1\s*$/m)?.[2] ??
+      relative(contentDir, file)
+        .replace(/\.md$/, '')
+        .split(sep)
+        .map((segment) => githubSlug(segment))
+        .join('/')
+        .replace(/\/index$/, '');
+    return { slug, isDraft: /^draft:\s*true\s*$/m.test(frontmatter) };
+  })
+  .filter(({ isDraft }) => isDraft);
+for (const { slug } of drafts) {
+  if (resolveSitePath(`/blog/${slug}`) || resolveSitePath(`/blog/${slug}/`)) {
+    fail(`draft ${slug} was built to dist/blog/`);
   }
 }
 
@@ -143,7 +162,7 @@ if (failures.length > 0) {
   process.exitCode = 1;
 } else {
   console.log(
-    `Verified ${htmlFiles.length} HTML pages, XML feeds, canonical URLs, internal links, ` +
-      `social image, and ${drafts.length} hidden drafts.`
+    `Verified ${routes.size} pages (each at /path and /path/), XML feeds, canonical URLs, ` +
+      `internal links, social images, and ${drafts.length} hidden drafts.`
   );
 }

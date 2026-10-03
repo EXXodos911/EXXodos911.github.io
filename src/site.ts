@@ -17,5 +17,3 @@ export const SITE = {
   // Number of words per minute used for automatic reading-time estimates.
   wordsPerMinute: 200,
 } as const;
-
-export type Site = typeof SITE;

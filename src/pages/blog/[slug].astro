@@ -1,6 +1,8 @@
 ---
 import { render } from 'astro:content';
 import { getImage, Picture } from 'astro:assets';
+import TagList from '../../components/TagList.astro';
+import TocList from '../../components/TocList.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { SITE } from '../../site';
 import {
@@ -8,10 +10,7 @@ import {
   formatPostDate,
   getVisiblePosts,
   postPath,
-  slugifyTag,
-  tagPath,
   toISODate,
-  withBase,
   type Post,
 } from '../../utils/posts';
 
@@ -55,7 +54,7 @@ const socialImage = post.data.cover
   socialImage={socialImage}
 >
   <article class={showToc ? 'article article--with-toc' : 'article'}>
-    <a class="back-link" href={withBase('/')}>← All notes</a>
+    <a class="back-link" href="/">← All notes</a>
 
     <div class="article__layout">
       <div class="article__main">
@@ -83,13 +82,7 @@ const socialImage = post.data.cover
               </>
             )}
           </div>
-          {post.data.tags.length > 0 && (
-            <ul class="tag-list tag-list--article" aria-label="Tags">
-              {post.data.tags.map((tag) => (
-                <li><a class="tag tag--link" href={withBase(tagPath(slugifyTag(tag)))}>{tag}</a></li>
-              ))}
-            </ul>
-          )}
+          <TagList tags={post.data.tags} class="tag-list--article" />
         </header>
 
         {showToc && (
@@ -99,13 +92,7 @@ const socialImage = post.data.cover
               <span class="toc-inline__count">{toc.length} sections</span>
             </summary>
             <nav class="toc" aria-label="Table of contents">
-              <ol>
-                {toc.map((entry) => (
-                  <li class={entry.depth === 3 ? 'toc__item toc__item--sub' : 'toc__item'}>
-                    <a href={`#${entry.slug}`}>{entry.text}</a>
-                  </li>
-                ))}
-              </ol>
+              <TocList headings={toc} />
             </nav>
           </details>
         )}
@@ -117,13 +104,13 @@ const socialImage = post.data.cover
         {(newer || older) && (
           <nav class="post-nav" aria-label="More notes">
             {older ? (
-              <a class="post-nav__card" href={withBase(postPath(older))} rel="prev">
+              <a class="post-nav__card" href={postPath(older)} rel="prev">
                 <span class="post-nav__direction">← Older</span>
                 <span class="post-nav__title">{older.data.title}</span>
               </a>
             ) : <span />}
             {newer && (
-              <a class="post-nav__card post-nav__card--newer" href={withBase(postPath(newer))} rel="next">
+              <a class="post-nav__card post-nav__card--newer" href={postPath(newer)} rel="next">
                 <span class="post-nav__direction">Newer →</span>
                 <span class="post-nav__title">{newer.data.title}</span>
               </a>
@@ -138,13 +125,7 @@ const socialImage = post.data.cover
             <p class="toc__title">On this page</p>
             <div class="toc__rail">
               <span class="toc__marker" aria-hidden="true"></span>
-              <ol>
-                {toc.map((entry) => (
-                  <li class={entry.depth === 3 ? 'toc__item toc__item--sub' : 'toc__item'}>
-                    <a href={`#${entry.slug}`}>{entry.text}</a>
-                  </li>
-                ))}
-              </ol>
+              <TocList headings={toc} />
             </div>
           </nav>
         </aside>

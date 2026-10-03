@@ -13,7 +13,7 @@ type Props = {
   publishedTime?: string;
   updatedTime?: string;
   noindex?: boolean;
-  /** Overrides SITE.socialImage. `src` is a root-relative URL that already includes the base. */
+  /** Overrides SITE.socialImage. `src` is a root-relative or absolute URL. */
   socialImage?: { src: string; width: number; height: number; alt: string };
 };
 
@@ -27,14 +27,12 @@ const {
   noindex = false,
   socialImage,
 } = Astro.props;
-const base = import.meta.env.BASE_URL;
 // `site` in astro.config.mjs is the single source of truth for the public URL.
-const site = Astro.site ?? new URL('http://localhost/');
-const absoluteUrl = (path: string) => new URL(`${base}${path.replace(/^\/+/, '')}`, site).href;
+const absoluteUrl = (path: string) => new URL(path, Astro.site).href;
 const canonicalUrl = canonicalPath ? absoluteUrl(canonicalPath) : undefined;
 const homeUrl = absoluteUrl('/');
-const ogImage = socialImage ?? { ...SITE.socialImage, src: absoluteUrl(SITE.socialImage.src) };
-const socialImageUrl = new URL(ogImage.src, site).href;
+const ogImage = socialImage ?? SITE.socialImage;
+const socialImageUrl = absoluteUrl(ogImage.src);
 const schema = type === 'article'
   ? {
       '@context': 'https://schema.org',
@@ -68,11 +66,11 @@ const schema = type === 'article'
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content={description} />
     <meta name="theme-color" content="#141415" />
-    <link rel="icon" type="image/svg+xml" href={`${base}favicon.svg`} />
-    <link rel="apple-touch-icon" href={`${base}apple-touch-icon.png`} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     {canonicalUrl && <link rel="canonical" href={canonicalUrl} />}
-    <link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS`} href={`${base}rss.xml`} />
-    <link rel="sitemap" type="application/xml" href={`${base}sitemap-index.xml`} />
+    <link rel="alternate" type="application/rss+xml" title={`${SITE.name} RSS`} href="/rss.xml" />
+    <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
     {noindex && <meta name="robots" content="noindex, nofollow" />}
     <meta property="og:type" content={type} />
     <meta property="og:site_name" content={SITE.name} />

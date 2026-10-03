@@ -12,7 +12,7 @@ This example shows everything the article style supports.
 
 ### Even smaller headings work too
 
-Regular paragraphs use a serif face for comfortable reading. Links look like [this link to nowhere](#), with an underline that brightens on hover.
+Body text is set in Inter with generous line height for comfortable reading. Links look like [this link to nowhere](#), with an underline that brightens on hover.
 
 ## Lists
 
