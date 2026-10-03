@@ -1,6 +1,5 @@
 import { defineConfig } from "astro/config";
 import sitemap from "@astrojs/sitemap";
-import { codeBlockFrame } from "./src/utils/code-block.mjs";
 
 export default defineConfig({
   output: "static",
@@ -9,7 +8,6 @@ export default defineConfig({
   markdown: {
     shikiConfig: {
       theme: "github-dark-dimmed",
-      transformers: [codeBlockFrame()],
     },
   },
 });

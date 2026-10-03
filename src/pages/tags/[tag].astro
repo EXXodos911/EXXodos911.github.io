@@ -1,32 +1,60 @@
 ---
-import PostRow from '../../components/PostRow.astro';
+import { getCollection } from 'astro:content';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { SITE } from '../../site';
-import { getVisiblePosts, groupByTag, tagPath, withBase, type TagGroup } from '../../utils/posts';
+import { estimateReadingTime, formatPostDate, slugifyTag, toISODate } from '../../utils/posts';
 
 export async function getStaticPaths() {
-  const groups = groupByTag(await getVisiblePosts());
-  return groups.map((group) => ({ params: { tag: group.slug }, props: { group } }));
+  const posts = await getCollection('blog', ({ data }) => !data.draft);
+  const tags = new Set<string>();
+  for (const post of posts) {
+    for (const tag of post.data.tags) tags.add(tag);
+  }
+  return [...tags].map((tag) => {
+    const tagged = posts
+      .filter((post) => post.data.tags.includes(tag))
+      .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+    return { params: { tag: slugifyTag(tag) }, props: { tag, posts: tagged } };
+  });
 }
 
-type Props = { group: TagGroup };
-
-const { group } = Astro.props;
+const { tag, posts } = Astro.props;
+const base = import.meta.env.BASE_URL;
 ---
 
 <SiteLayout
-  title={`Notes tagged “${group.label}” — ${SITE.name}`}
-  description={`Notes tagged with ${group.label}.`}
-  canonicalPath={tagPath(group.slug)}
+  title={`#${tag}`}
+  description={`Notes tagged with ${tag}.`}
+  canonicalPath={`/tags/${slugifyTag(tag)}`}
 >
   <header class="page-header">
     <p class="eyebrow">Tag</p>
-    <h1 class="tag-title">{group.label}</h1>
+    <h1>#{tag}</h1>
   </header>
 
-  <section class="post-list" aria-label={`Posts tagged ${group.label}`}>
-    {group.posts.map((post, index) => <PostRow post={post} index={index} />)}
+  <section class="post-list" aria-label={`Posts tagged ${tag}`}>
+    {posts.map((post, index) => {
+      const slug = post.id.replace(/\.md$/, '');
+      const url = `${base}blog/${slug}`;
+      return (
+        <article class="post-row">
+          <a href={url} aria-label={`Read ${post.data.title}`}>
+            <div class="post-row__number" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </div>
+            <div class="post-row__body">
+              <h2>{post.data.title}</h2>
+              <p>{post.data.description}</p>
+              <div class="post-row__meta">
+                <time datetime={toISODate(post.data.pubDate)}>{formatPostDate(post.data.pubDate)}</time>
+                <span>{estimateReadingTime(post.body ?? '')}</span>
+              </div>
+            </div>
+            <span class="post-row__arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+      );
+    })}
   </section>
 
-  <p class="tags-index-link"><a href={withBase('/tags')}>← All tags</a></p>
+  <p class="tags-index-link"><a href={`${base}tags`}>← All tags</a></p>
 </SiteLayout>

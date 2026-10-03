@@ -1,9 +1,12 @@
 ---
-import PostRow from '../components/PostRow.astro';
+import { getCollection } from 'astro:content';
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { getVisiblePosts, withBase } from '../utils/posts';
+import { estimateReadingTime, formatPostDate, toISODate } from '../utils/posts';
 
-const posts = await getVisiblePosts();
+const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+  (a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
+);
+const base = import.meta.env.BASE_URL;
 ---
 
 <SiteLayout canonicalPath="/">
@@ -13,8 +16,38 @@ const posts = await getVisiblePosts();
 
   <section class="post-list" aria-label="Blog posts">
     {posts.length === 0 && <p class="empty">No notes yet. Check back soon.</p>}
-    {posts.map((post, index) => <PostRow post={post} index={index} />)}
+    {posts.map((post, index) => {
+      const slug = post.id.replace(/\.md$/, '');
+      const url = `${base}blog/${slug}`;
+      return (
+        <article class="post-row">
+          <a href={url} aria-label={`Read ${post.data.title}`}>
+            <div class="post-row__number" aria-hidden="true">
+              {String(index + 1).padStart(2, '0')}
+            </div>
+
+            <div class="post-row__body">
+              <h2>{post.data.title}</h2>
+              <p>{post.data.description}</p>
+              <div class="post-row__meta">
+                <time datetime={toISODate(post.data.pubDate)}>{formatPostDate(post.data.pubDate)}</time>
+                <span>{estimateReadingTime(post.body ?? '')}</span>
+                {post.data.tags.length > 0 && (
+                  <span class="tag-list" aria-label={`Tags: ${post.data.tags.join(', ')}`}>
+                  {post.data.tags.map((tag) => (
+                      <span class="tag">#{tag}</span>
+                  ))}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <span class="post-row__arrow" aria-hidden="true">↗</span>
+          </a>
+        </article>
+      );
+    })}
   </section>
 
-  <p class="tags-index-link"><a href={withBase('/tags')}>Browse by tag →</a></p>
+  <p class="tags-index-link"><a href={`${base}tags`}>Browse by tag →</a></p>
 </SiteLayout>

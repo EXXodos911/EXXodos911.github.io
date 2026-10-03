@@ -1,30 +1,33 @@
 ---
+import { getCollection } from 'astro:content';
 import SiteLayout from '../../layouts/SiteLayout.astro';
-import { SITE } from '../../site';
-import { getVisiblePosts, groupByTag, tagPath, withBase } from '../../utils/posts';
+import { slugifyTag } from '../../utils/posts';
 
-const groups = groupByTag(await getVisiblePosts());
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+const counts = new Map<string, number>();
+for (const post of posts) {
+  for (const tag of post.data.tags) {
+    counts.set(tag, (counts.get(tag) ?? 0) + 1);
+  }
+}
+const tags = [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+const base = import.meta.env.BASE_URL;
 ---
 
-<SiteLayout title={`Tags — ${SITE.name}`} description="Browse notes by tag." canonicalPath="/tags">
+<SiteLayout title="Tags" description="Browse notes by tag." canonicalPath="/tags">
   <header class="page-header">
     <h1>Tags</h1>
   </header>
 
-  {groups.length === 0 && <p class="empty">No tags yet.</p>}
+  {tags.length === 0 && <p class="empty">No tags yet.</p>}
 
   <ul class="tag-index" aria-label="All tags">
-    {groups.map((group) => (
+    {tags.map(([tag, count]) => (
       <li>
-        <a href={withBase(tagPath(group.slug))}>
-          #{group.label}
-          <span class="tag-count">
-            {group.posts.length}<span class="visually-hidden"> {group.posts.length === 1 ? 'note' : 'notes'}</span>
-          </span>
-        </a>
+        <a href={`${base}tags/${slugifyTag(tag)}`}>#{tag} <span class="tag-count">{count}</span></a>
       </li>
     ))}
   </ul>
 
-  <p class="tags-index-link"><a href={withBase('/')}>← All notes</a></p>
+  <p class="tags-index-link"><a href={base}>← All notes</a></p>
 </SiteLayout>
