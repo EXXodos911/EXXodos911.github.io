@@ -9,8 +9,6 @@ on:
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 # Never cancel a deploy halfway; queue the next one instead.
 concurrency:
@@ -28,7 +26,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 22.12.0
+          # Any Node version allowed by package.json "engines" (prefers the runner's preinstalled one).
+          node-version-file: package.json
           cache: npm
 
       - name: Install dependencies
@@ -46,6 +45,10 @@ jobs:
   deploy:
     needs: build
     runs-on: ubuntu-latest
+    # Only the publishing job can write to Pages.
+    permissions:
+      pages: write
+      id-token: write
 
     environment:
       name: github-pages

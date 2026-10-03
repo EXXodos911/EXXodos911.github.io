@@ -18,7 +18,8 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: 22.12.0
+          # Any Node version allowed by package.json "engines" (prefers the runner's preinstalled one).
+          node-version-file: package.json
           cache: npm
 
       - name: Install dependencies

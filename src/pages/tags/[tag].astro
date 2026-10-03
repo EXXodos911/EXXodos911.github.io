@@ -2,7 +2,7 @@
 import PostRow from '../../components/PostRow.astro';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { SITE } from '../../site';
-import { getVisiblePosts, groupByTag, tagPath, withBase, type TagGroup } from '../../utils/posts';
+import { getVisiblePosts, groupByTag, tagPath, type TagGroup } from '../../utils/posts';
 
 export async function getStaticPaths() {
   const groups = groupByTag(await getVisiblePosts());
@@ -28,5 +28,5 @@ const { group } = Astro.props;
     {group.posts.map((post, index) => <PostRow post={post} index={index} />)}
   </section>
 
-  <p class="tags-index-link"><a href={withBase('/tags')}>← All tags</a></p>
+  <p class="tags-index-link"><a href="/tags">← All tags</a></p>
 </SiteLayout>

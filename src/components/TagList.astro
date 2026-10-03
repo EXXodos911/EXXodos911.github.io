@@ -1,0 +1,18 @@
+---
+import { slugifyTag, tagPath } from '../utils/posts';
+
+type Props = {
+  tags: string[];
+  class?: string;
+};
+
+const { tags, class: className } = Astro.props;
+---
+
+{tags.length > 0 && (
+  <ul class:list={['tag-list', className]} aria-label="Tags">
+    {tags.map((tag) => (
+      <li><a class="tag tag--link" href={tagPath(slugifyTag(tag))}>{tag}</a></li>
+    ))}
+  </ul>
+)}

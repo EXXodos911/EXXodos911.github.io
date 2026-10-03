@@ -1,18 +1,18 @@
 ---
 import { SITE } from '../site';
-import { withBase } from '../utils/posts';
 
 const currentYear = new Date().getFullYear();
-const currentPath = Astro.url.pathname.replace(/(.)\/$/, '$1');
+// Pages build as /tags.html (and /index.html), and load at /tags or /tags/.
+const currentPath = Astro.url.pathname.replace(/(index)?\.html$/, '').replace(/(.)\/$/, '$1');
 const pageLinks = [
-  { label: 'Notes', href: withBase('/') },
-  { label: 'Tags', href: withBase('/tags') },
+  { label: 'Notes', href: '/' },
+  { label: 'Tags', href: '/tags' },
 ];
 ---
 
 <aside class="sidebar">
   <div>
-    <a class="identity" href={withBase('/')} aria-label="Go to homepage">
+    <a class="identity" href="/">
       <span class="identity__mark" aria-hidden="true"></span>
       <span>{SITE.name}</span>
     </a>
@@ -28,7 +28,7 @@ const pageLinks = [
       {SITE.socials.map((link) => (
         <a href={link.href} target="_blank" rel="noreferrer">{link.label}</a>
       ))}
-      <a href={withBase('/rss.xml')}>RSS</a>
+      <a href="/rss.xml">RSS</a>
     </nav>
   </div>
 

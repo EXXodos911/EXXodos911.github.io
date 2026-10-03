@@ -1,7 +1,7 @@
 ---
 import PostRow from '../components/PostRow.astro';
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { getVisiblePosts, withBase } from '../utils/posts';
+import { getVisiblePosts } from '../utils/posts';
 
 const posts = await getVisiblePosts();
 ---
@@ -16,5 +16,5 @@ const posts = await getVisiblePosts();
     {posts.map((post, index) => <PostRow post={post} index={index} />)}
   </section>
 
-  <p class="tags-index-link"><a href={withBase('/tags')}>Browse by tag →</a></p>
+  <p class="tags-index-link"><a href="/tags">Browse by tag →</a></p>
 </SiteLayout>
