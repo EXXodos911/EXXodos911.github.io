@@ -43,6 +43,29 @@ Actions validates and builds the site (`npm run validate`), then deploys to GitH
 - Filename becomes the URL slug. Use lowercase with dashes.
 - `pubDate` sorts newest first and feeds RSS/sitemap.
 
+### Images
+
+Put images for a post in a folder beside its Markdown file, for example
+`src/content/blog/my-post/diagram.jpg`, then reference them with a relative path:
+
+```md
+![A diagram showing the process](./my-post/diagram.jpg)
+```
+
+Astro processes local images at build time: Markdown images become WebP with a responsive
+`srcset`, never wider than the original. Add an optional cover image in frontmatter to get an
+AVIF/WebP hero image (falling back to the original format). The cover is also cropped to a
+1200×630 JPEG and used as the post's social preview image:
+
+```yaml
+cover: ./my-post/cover.jpg
+coverAlt: A view of the finished project
+```
+
+Markdown images should include meaningful alt text. Keep decorative image alt text
+empty (`![](./my-post/decoration.png)`). Images placed in `public/` are copied as-is
+and do not use Astro's optimization pipeline.
+
 ## Run locally
 
 This project uses Astro 7 and requires Node.js 22.12 or newer.
