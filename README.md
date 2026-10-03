@@ -70,7 +70,7 @@ and do not use Astro's optimization pipeline.
 ## Run locally
 
 This project uses Astro 7 and Node.js 22.12+, 24, or 26 (the `engines` field in
-`package.json`; CI uses the newest release it allows).
+`package.json`; CI uses a version from that range).
 
 ```bash
 npm install

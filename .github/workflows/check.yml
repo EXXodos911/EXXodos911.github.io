@@ -18,7 +18,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v7
         with:
-          # Newest Node release allowed by package.json "engines".
+          # Any Node version allowed by package.json "engines" (prefers the runner's preinstalled one).
           node-version-file: package.json
           cache: npm
 
