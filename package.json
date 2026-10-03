@@ -5,7 +5,6 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
-    "start": "astro dev",
     "check": "astro check",
     "build": "astro build",
     "validate": "npm run check && npm run build && npm run verify",

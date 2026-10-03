@@ -678,6 +678,13 @@ a.tag--link:focus-visible {
   border-radius: 10px;
 }
 
+.article__cover {
+  display: block;
+  margin: 28px 0 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+
 .article__body hr {
   margin: 2.8em 0;
   border: 0;

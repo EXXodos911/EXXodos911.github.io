@@ -1,5 +1,6 @@
 ---
 import { render } from 'astro:content';
+import { getImage, Picture } from 'astro:assets';
 import SiteLayout from '../../layouts/SiteLayout.astro';
 import { SITE } from '../../site';
 import {
@@ -33,6 +34,15 @@ const updatedISO = post.data.updatedDate?.toISOString();
 const toc = headings.filter((heading) => heading.depth === 2 || heading.depth === 3);
 const showToc = toc.length >= 2;
 const hasCode = /^\s*(```|~~~)/m.test(post.body ?? '');
+// A cover doubles as the post's social preview, cropped to 1200×630 JPEG.
+const socialImage = post.data.cover
+  ? {
+      src: (await getImage({ src: post.data.cover, width: 1200, height: 630, fit: 'cover', format: 'jpg' })).src,
+      width: 1200,
+      height: 630,
+      alt: post.data.coverAlt || post.data.title,
+    }
+  : undefined;
 ---
 
 <SiteLayout
@@ -42,6 +52,7 @@ const hasCode = /^\s*(```|~~~)/m.test(post.body ?? '');
   type="article"
   publishedTime={publishedISO}
   updatedTime={updatedISO}
+  socialImage={socialImage}
 >
   <article class={showToc ? 'article article--with-toc' : 'article'}>
     <a class="back-link" href={withBase('/')}>← All notes</a>
@@ -52,6 +63,15 @@ const hasCode = /^\s*(```|~~~)/m.test(post.body ?? '');
           {post.data.draft && <p class="badge-draft">Draft · only visible in dev</p>}
           <h1>{post.data.title}</h1>
           <p class="article__description">{post.data.description}</p>
+          {post.data.cover && (
+            <Picture
+              src={post.data.cover}
+              formats={['avif', 'webp']}
+              alt={post.data.coverAlt ?? ''}
+              priority
+              class="article__cover"
+            />
+          )}
           <div class="article__meta">
             <time datetime={toISODate(post.data.pubDate)}>{formatPostDate(post.data.pubDate)}</time>
             <span aria-hidden="true">·</span>

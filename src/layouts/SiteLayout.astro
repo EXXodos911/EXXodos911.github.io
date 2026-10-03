@@ -13,6 +13,8 @@ type Props = {
   publishedTime?: string;
   updatedTime?: string;
   noindex?: boolean;
+  /** Overrides SITE.socialImage. `src` is a root-relative URL that already includes the base. */
+  socialImage?: { src: string; width: number; height: number; alt: string };
 };
 
 const {
@@ -23,6 +25,7 @@ const {
   publishedTime,
   updatedTime,
   noindex = false,
+  socialImage,
 } = Astro.props;
 const base = import.meta.env.BASE_URL;
 // `site` in astro.config.mjs is the single source of truth for the public URL.
@@ -30,7 +33,8 @@ const site = Astro.site ?? new URL('http://localhost/');
 const absoluteUrl = (path: string) => new URL(`${base}${path.replace(/^\/+/, '')}`, site).href;
 const canonicalUrl = canonicalPath ? absoluteUrl(canonicalPath) : undefined;
 const homeUrl = absoluteUrl('/');
-const socialImageUrl = absoluteUrl(SITE.socialImage.src);
+const ogImage = socialImage ?? { ...SITE.socialImage, src: absoluteUrl(SITE.socialImage.src) };
+const socialImageUrl = new URL(ogImage.src, site).href;
 const schema = type === 'article'
   ? {
       '@context': 'https://schema.org',
@@ -76,10 +80,10 @@ const schema = type === 'article'
     <meta property="og:description" content={description} />
     {canonicalUrl && <meta property="og:url" content={canonicalUrl} />}
     <meta property="og:image" content={socialImageUrl} />
-    <meta property="og:image:type" content="image/png" />
-    <meta property="og:image:width" content={String(SITE.socialImage.width)} />
-    <meta property="og:image:height" content={String(SITE.socialImage.height)} />
-    <meta property="og:image:alt" content={SITE.socialImage.alt} />
+    <meta property="og:image:type" content={socialImageUrl.endsWith('.png') ? 'image/png' : 'image/jpeg'} />
+    <meta property="og:image:width" content={String(ogImage.width)} />
+    <meta property="og:image:height" content={String(ogImage.height)} />
+    <meta property="og:image:alt" content={ogImage.alt} />
     {type === 'article' && publishedTime && (
       <meta property="article:published_time" content={publishedTime} />
     )}
@@ -90,7 +94,7 @@ const schema = type === 'article'
     <meta name="twitter:title" content={title} />
     <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={socialImageUrl} />
-    <meta name="twitter:image:alt" content={SITE.socialImage.alt} />
+    <meta name="twitter:image:alt" content={ogImage.alt} />
     <title>{title}</title>
     {!noindex && (
       <script type="application/ld+json" set:html={JSON.stringify(schema).replace(/</g, '\\u003c')} />
